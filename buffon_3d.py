@@ -10,6 +10,7 @@ __author__ = "bigfatnoob"
 from matplotlib import pyplot as plt
 import numpy as np
 from shapely.geometry import Polygon, LineString, Point
+import time
 
 class Buffon(object):
   def __init__(self, r=1.0, l=1):
@@ -124,6 +125,7 @@ def pi_needle_triple(r, l, cnt_probe_limit=10000, signif_digits=3, seed=None):
     0: 0, 1: 0, 2: 0, 3: 0
   }
   pi_estimate = 0
+  start = time.time()
   while cnt_probe < cnt_probe_limit:
     cnt_probe += 1
     n_cuts = experiment.throw()
@@ -132,8 +134,9 @@ def pi_needle_triple(r, l, cnt_probe_limit=10000, signif_digits=3, seed=None):
     if pi_lb <= pi_estimate <= pi_ub:
       is_censored = False
       break
+  end = time.time()
   pi_estimate = round(pi_estimate, signif_digits)
-  error =  ('%'+'.%de' % signif_digits)%(pi_estimate - np.pi)
+  error = ('%'+'.%de' % signif_digits)%(pi_estimate - np.pi)
   return {
     "seed": seed,
     "pi_estimate": pi_estimate,
@@ -142,7 +145,8 @@ def pi_needle_triple(r, l, cnt_probe_limit=10000, signif_digits=3, seed=None):
     "error": error,
     "is_censored": is_censored,
     "cnt_probe_limit": cnt_probe_limit,
-    "cnt_probe": cnt_probe
+    "cnt_probe": cnt_probe,
+    "time(secs)": round(end - start, 4)
   }
 
 
@@ -153,7 +157,7 @@ def _illustrate():
 
 def _pi_needle_triple():
   for i in range(5):
-    results = pi_needle_triple(1, 1, cnt_probe_limit=100000, signif_digits=7, seed=i)
+    results = pi_needle_triple(1, 1, cnt_probe_limit=100000, signif_digits=4, seed=i)
     print(results)
 
 
