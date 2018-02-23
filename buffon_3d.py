@@ -12,6 +12,7 @@ import numpy as np
 from shapely.geometry import Polygon, LineString, Point
 import time
 import pandas as pd
+import matplotlib.pyplot as plt
 
 class Buffon(object):
   def __init__(self, r=1.0, l=1):
@@ -113,7 +114,7 @@ class Buffon(object):
 
 def pi_needle_triple(r, l, cnt_probe_limit=10000, signif_digits=3, seed=None):
   if seed is None:
-    seed = np.random.randint(0)
+    seed = np.random.randint(0, 2 ** 32)
   np.random.seed(seed)
   tolerance = 5 / (10 ** (signif_digits + 1))
   pi_lb = np.pi - tolerance
@@ -137,7 +138,7 @@ def pi_needle_triple(r, l, cnt_probe_limit=10000, signif_digits=3, seed=None):
       break
   end = time.time()
   pi_estimate = round(pi_estimate, signif_digits)
-  error = ('%'+'.%de' % signif_digits)%(pi_estimate - np.pi)
+  error = ('%'+'.%de' % signif_digits) % (pi_estimate - np.pi)
   return [
     seed,
     signif_digits,
@@ -173,8 +174,65 @@ def _pi_needle_triple():
   results.to_html('results.html')
 
 
+def plot_errorbar(x, y, e, fig_name, title, y_label):
+  plt.errorbar(x, y, e, fmt='bo-', ecolor='red')
+  plt.xlabel("# of significant digits")
+  plt.ylabel(y_label)
+  plt.title(title)
+  plt.savefig(fig_name)
+  plt.clf()
+
+def plot_line(x, y, fig_name, title, y_label):
+  plt.plot(x, y, 'o-')
+  plt.xlabel("# of significant digits")
+  plt.ylabel(y_label)
+  plt.title(title)
+  plt.savefig(fig_name)
+  plt.clf()
+
+def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=None):
+  results = pd.DataFrame(
+    columns=["seedInit", "signifDigits", "piMC", "tolRadius", "error", "isCensored", "cntProbe", "runtime"])
+  if start_seed is None:
+    start_seed = np.random.randint(0, 100)
+  np.random.seed(start_seed)
+  x_axis = []
+  all_trials_means, all_trials_std = [], []
+  all_errors_means, all_errors_std = [], []
+  i = 1
+  for signif_digit in range(1, max_signif_digits + 1):
+    x_axis.append(signif_digit)
+    trials, errors = [], []
+    for _ in range(repeats):
+      result = pi_needle_triple(1, 1, cnt_probe_limit, signif_digits=signif_digit)
+      error = np.absolute(result[2] - np.pi)
+      trials.append(result[-2])
+      errors.append(error)
+      results.loc[i] = result
+      i += 1
+    # times = np.array(times).astype(np.float)
+    errors = np.array(errors).astype(np.float)
+    all_trials_means.append(np.mean(trials))
+    all_errors_means.append(np.mean(errors))
+    all_trials_std.append(np.std(trials))
+    all_errors_std.append(np.std(errors))
+    print("Completed for %d Significant Digits" % signif_digit)
+  results.index.name = 'sampleId'
+  results.columns.name = results.index.name
+  results.index.name = None
+  plot_errorbar(x_axis, all_trials_means, all_trials_std, "trials.png", "# Trials vs # Significant digits", "#Trials")
+  plot_errorbar(x_axis, all_errors_means, all_errors_std, "errors.png", "Errors vs # Significant digits", "Error")
+  plot_line(x_axis, np.log(all_trials_means), "trials_log.png", "log - # Trials vs # Significant digits", "log - #Trials")
+  plot_line(x_axis, np.log(all_errors_means), "errors_log.png", "log - Error vs # Significant digits", "log - Error")
+  results.to_html('results.html')
+
+
+def _triple_plot_stats():
+  triple_plot_stats(6, 10, 10000)
+
 
 if __name__ == "__main__":
-  _pi_needle_triple()
+  # _pi_needle_triple()
   # _illustrate()
+  _triple_plot_stats()
 
