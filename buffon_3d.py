@@ -1,7 +1,7 @@
 from __future__ import print_function, division
 import sys
 import os
-sys.path.append(os.path.abspath("."))
+#sys.path.append(os.path.abspath("."))
 sys.dont_write_bytecode = True
 
 
@@ -12,7 +12,7 @@ import numpy as np
 from shapely.geometry import Polygon, LineString, Point
 import time
 import pandas as pd
-import matplotlib.pyplot as plt
+
 
 class Buffon(object):
   def __init__(self, r=1.0, l=1):
@@ -95,7 +95,7 @@ class Buffon(object):
     cuts = {
       0: 0, 1: 0, 2: 0, 3: 0
     }
-    for _ in xrange(n):
+    for _ in range(n):
       line = self.generate()
       line_cuts = self.get_intersections(line)
       cuts[line_cuts] += 1
@@ -112,9 +112,11 @@ class Buffon(object):
     return self.alpha / ((cuts[1] + cuts[2] + cuts[3]) / n_throws + 0.5)
 
 
-def pi_needle_triple(r, l, cnt_probe_limit=10000, signif_digits=3, seed=None):
-  if seed is None:
-    seed = np.random.randint(0, 2 ** 32)
+def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None):
+  #if seed is None:
+    #seed = np.random.randint(0, 2 ** 32)    #maxint limits with python3
+  seed = round(1e9*np.random.uniform(0,1))
+  solver = "Needles_3"              #solver name to include in the results
   np.random.seed(seed)
   tolerance = 5 / (10 ** (signif_digits + 1))
   pi_lb = np.pi - tolerance
@@ -141,6 +143,7 @@ def pi_needle_triple(r, l, cnt_probe_limit=10000, signif_digits=3, seed=None):
   error = ('%'+'.%de' % signif_digits) % (pi_estimate - np.pi)
   return [
     seed,
+    solver,
     signif_digits,
     pi_estimate,
     tolerance,
@@ -158,11 +161,11 @@ def _illustrate():
 
 
 def _pi_needle_triple():
-  results = pd.DataFrame(columns = ["seedInit","signifDigits","piMC","tolRadius","error","isCensored","cntProbe","runtime"])
+  results = pd.DataFrame(columns = ["seedInit","solverName","signifDigits","piHat","OFtol","error","isCensored","cntProbe","runtime"])
   seed = round(9999*np.random.uniform(0,1))
   signif_start = 2
   for i in range(1,100):
-    temp_return = pi_needle_triple(1, 1, cnt_probe_limit=100000, signif_digits=signif_start, seed = seed)
+    temp_return = pi_needle_triple(1, 1, cnt_probe_limit=1000, signif_digits=signif_start, seed = seed)
     results.loc[i] = temp_return
     seed = round(1e9*np.random.uniform(0,1))
     if(i%15 == 0):
@@ -192,7 +195,7 @@ def plot_line(x, y, fig_name, title, y_label):
 
 def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=None):
   results = pd.DataFrame(
-    columns=["seedInit", "signifDigits", "piMC", "tolRadius", "error", "isCensored", "cntProbe", "runtime"])
+    columns=["seedInit","solverName","signifDigits","piHat","OFtol","error","isCensored","cntProbe","runtime"])
   if start_seed is None:
     start_seed = np.random.randint(0, 100)
   np.random.seed(start_seed)
@@ -228,7 +231,7 @@ def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=No
 
 
 def _triple_plot_stats():
-  triple_plot_stats(6, 10, 10000)
+  triple_plot_stats(6, 100, 100000)
 
 
 if __name__ == "__main__":
