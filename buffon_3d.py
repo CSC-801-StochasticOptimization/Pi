@@ -122,7 +122,7 @@ def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None):
   pi_lb = np.pi - tolerance
   pi_ub = np.pi + tolerance
   cnt_probe = 0
-  is_censored = True
+  is_censored = False
   experiment = Buffon(r, l)
   experiment.initialize()
   cuts = {
@@ -135,8 +135,10 @@ def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None):
     n_cuts = experiment.throw()
     cuts[n_cuts] += 1
     pi_estimate = experiment.estimate(cuts)
-    if pi_lb <= pi_estimate <= pi_ub:
-      is_censored = False
+    if pi_lb >= pi_estimate or pi_estimate >= pi_ub:
+      is_censored = True
+      cnt_probe = 0
+      cnt_probe_limit = 2*cnt_probe_limit
       break
   end = time.time()
   pi_estimate = round(pi_estimate, signif_digits)
@@ -208,7 +210,7 @@ def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=No
     trials, errors = [], []
     for _ in range(repeats):
       result = pi_needle_triple(1, 1, cnt_probe_limit, signif_digits=signif_digit)
-      error = np.absolute(result[2] - np.pi)
+      error = np.absolute(result[3] - np.pi)
       trials.append(result[-2])
       errors.append(error)
       results.loc[i] = result
@@ -231,7 +233,7 @@ def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=No
 
 
 def _triple_plot_stats():
-  triple_plot_stats(6, 100, 100000)
+  triple_plot_stats(6, 100, 10000)
 
 
 if __name__ == "__main__":
