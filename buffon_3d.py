@@ -122,7 +122,7 @@ def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None):
   pi_lb = np.pi - tolerance
   pi_ub = np.pi + tolerance
   cnt_probe = 0
-  is_censored = False
+  is_censored = True
   experiment = Buffon(r, l)
   experiment.initialize()
   cuts = {
@@ -135,10 +135,8 @@ def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None):
     n_cuts = experiment.throw()
     cuts[n_cuts] += 1
     pi_estimate = experiment.estimate(cuts)
-    if pi_lb >= pi_estimate or pi_estimate >= pi_ub:
-      is_censored = True
-      cnt_probe = 0
-      cnt_probe_limit = 2*cnt_probe_limit
+    if pi_lb <= pi_estimate <= pi_ub:
+      is_censored = False
       break
   end = time.time()
   pi_estimate = round(pi_estimate, signif_digits)
@@ -208,13 +206,20 @@ def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=No
   for signif_digit in range(1, max_signif_digits + 1):
     x_axis.append(signif_digit)
     trials, errors = [], []
-    for _ in range(repeats):
-      result = pi_needle_triple(1, 1, cnt_probe_limit, signif_digits=signif_digit)
+    count_limit = cnt_probe_limit
+    iter = 0
+    while iter < repeats:
+      result = pi_needle_triple(1, 1, count_limit, signif_digits=signif_digit)
+      if result[-3] is True:
+        count_limit = 2*count_limit
+        iter = 0
+        continue
       error = np.absolute(result[3] - np.pi)
       trials.append(result[-2])
       errors.append(error)
       results.loc[i] = result
       i += 1
+      iter += 1
     # times = np.array(times).astype(np.float)
     errors = np.array(errors).astype(np.float)
     all_trials_means.append(np.mean(trials))
@@ -225,15 +230,15 @@ def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=No
   results.index.name = 'sampleId'
   results.columns.name = results.index.name
   results.index.name = None
-  plot_errorbar(x_axis, all_trials_means, all_trials_std, "trials.png", "# Trials vs # Significant digits", "#Trials")
-  plot_errorbar(x_axis, all_errors_means, all_errors_std, "errors.png", "Errors vs # Significant digits", "Error")
-  plot_line(x_axis, np.log(all_trials_means), "trials_log.png", "log - # Trials vs # Significant digits", "log - #Trials")
-  plot_line(x_axis, np.log(all_errors_means), "errors_log.png", "log - Error vs # Significant digits", "log - Error")
-  results.to_html('results.html')
+  plot_errorbar(x_axis, all_trials_means, all_trials_std, "exp/trials.png", "# Trials vs # Significant digits", "#Trials")
+  plot_errorbar(x_axis, all_errors_means, all_errors_std, "exp/errors.png", "Errors vs # Significant digits", "Error")
+  plot_line(x_axis, np.log(all_trials_means), "exp/trials_log.png", "log - # Trials vs # Significant digits", "log - #Trials")
+  plot_line(x_axis, np.log(all_errors_means), "exp/errors_log.png", "log - Error vs # Significant digits", "log - Error")
+  results.to_html('exp/results.html')
 
 
 def _triple_plot_stats():
-  triple_plot_stats(6, 100, 10000)
+  triple_plot_stats(6, 100, 100000)
 
 
 if __name__ == "__main__":
