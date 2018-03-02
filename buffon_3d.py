@@ -12,6 +12,7 @@ import numpy as np
 from shapely.geometry import Polygon, LineString, Point
 import time
 import pandas as pd
+import csv
 
 
 class Buffon(object):
@@ -114,7 +115,7 @@ class Buffon(object):
 
 def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None):
   if seed is None:
-    # seed = np.random.randint(0, 2 ** 32)    #maxint limits with python3
+    # seed = np.random.randint(0, 2 ** 16)    #maxint limits with python3
     seed = int(round(1e9*np.random.uniform(0,1)))
   solver = "Needles_3"              #solver name to include in the results
   np.random.seed(seed)
@@ -139,8 +140,8 @@ def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None):
       is_censored = False
       break
   end = time.time()
-  pi_estimate = round(pi_estimate, signif_digits)
-  error = ('%'+'.%de' % signif_digits) % (pi_estimate - np.pi)
+  # pi_estimate = round(pi_estimate, signif_digits)
+  error = abs(pi_estimate - np.pi)
   return [
     seed,
     solver,
@@ -200,7 +201,7 @@ def plot_line(x, y, fig_name, title, y_label):
   plt.savefig(fig_name)
   plt.clf()
 
-def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=None):
+def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=None, folder_prefix="exp"):
   results = pd.DataFrame(
     columns=["seedInit","solverName","signifDigits","piHat","OFtol","error","isCensored","cntProbe","runtime"])
   if start_seed is None:
@@ -237,16 +238,17 @@ def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=No
   results.index.name = 'sampleId'
   results.columns.name = results.index.name
   results.index.name = None
-  plot_errorbar(x_axis, all_trials_means, all_trials_std, "exp/trials.png", "# Trials vs # Significant digits", "#Trials")
-  plot_errorbar(x_axis, all_errors_means, all_errors_std, "exp/errors.png", "Errors vs # Significant digits", "Error")
-  plot_line(x_axis, np.log(all_trials_means), "exp/trials_log.png", "log - # Trials vs # Significant digits", "log - #Trials")
-  plot_line(x_axis, np.log(all_errors_means), "exp/errors_log.png", "log - Error vs # Significant digits", "log - Error")
-  results.to_csv("exp/results.txt", sep="\t")
-  results.to_html('exp/results.html')
-  with open('exp/results.html') as f:
+  plot_errorbar(x_axis, all_trials_means, all_trials_std, "%s/trials.png" % folder_prefix, "# Trials vs # Significant digits", "#Trials")
+  plot_errorbar(x_axis, all_errors_means, all_errors_std, "%s/errors.png" % folder_prefix, "Errors vs # Significant digits", "Error")
+  plot_line(x_axis, np.log(all_trials_means), "exp/trials_log.png" % folder_prefix, "log - # Trials vs # Significant digits", "log - #Trials")
+  plot_line(x_axis, np.log(all_errors_means), "exp/errors_log.png" % folder_prefix, "log - Error vs # Significant digits", "log - Error")
+  results.to_csv("exp/results.txt" % folder_prefix, sep="\t")
+  results.to_html('exp/results.html' % folder_prefix)
+
+  with open('exp/results.html' % folder_prefix) as f:
     html_data = f.read()
     html_data += "\n"
-  with open('exp/results.html', "wb") as f:
+  with open('exp/results.html' % folder_prefix, "wb") as f:
     f.write(html_data)
 
 
@@ -271,7 +273,7 @@ def pi_throws(r, l, throws):
 
 
 
-def throws_experiment(r, l, throws, repeats, seed=None, save_file=None):
+def throws_experiment(r, l, throws, repeats, folder="", save_file=None):
   """
   Perform the thorws experiment where a needle is thrown a certain number of times.
   :param r: Ratio of length to distance
@@ -282,17 +284,21 @@ def throws_experiment(r, l, throws, repeats, seed=None, save_file=None):
   :param save_file: Save file. If None prints to console
   :return:
   """
-  if seed is None:
-    seed = np.random.randint(0, 2 ** 32)
-  print("# SEED: %d" % seed)
-  np.random.seed(seed)
-  ret_vals = []
+  ret_vals, seeds, runtimes = [], [], []
   for _ in range(repeats):
-    np.random.seed()
+    seed = np.random.randint(0, 2 ** 16)
+    np.random.seed(seed)
+    seeds.append(seed)
+    start = time.time()
     ret_vals.append(pi_throws(r, l, throws))
+    runtimes.append(time.time() - start)
   if save_file is not None:
-    with open(save_file, "wb") as f:
+    with open("%s%s" % (folder, save_file), "wb") as f:
       f.write("\n".join(map(str, ret_vals)))
+    with open("%sseeds_%s" % (folder, save_file), "wb") as f:
+      f.write("\n".join(map(str, seeds)))
+    with open("%stimes_%s" %  (folder, save_file), "wb") as f:
+      f.write("\n".join(map(str, runtimes)))
   return ret_vals
 
 
@@ -343,22 +349,44 @@ def _compare_mathematica_python():
   compare_mathematica_python([10, 100, 1000, 10000], "fg_asym_pi_triplegrid_mathematica_vs_python.png")
 
 
-def _throws_experiments():
-  for throw in [10, 100, 1000, 10000]:
+def _throws_experiments(seed_init=None):
+  if seed_init is None:
+    seed_init = np.random.randint(0, 2**16)
+    np.random.seed(seed_init)
+  print("# Seed Init = %d" % seed_init)
+  folder = "results-python/"
+  for throw in [10000]:
     print("# Throw: %d" % throw)
-    seed = np.random.randint(0, 2 ** 32)
-    throws_experiment(1.0, 1.0, throw, 100, seed=seed, save_file="results-python/py_triplegrid_%d.csv" % throw)
+    throws_experiment(1.0, 1.0, throw, 100, folder=folder, save_file="triplegrid_%d.csv" % throw)
 
+
+def aggregate_throws(throws, folder, write_file):
+  with open(write_file, "wb") as csv_file:
+    writer = csv.writer(csv_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+    writer.writerow(['sampleId', 'seedInit', 'solverName', 'numThrows', 'piHat', 'error', 'runtime'])
+    sampleId = 1
+    for throw in throws:
+      pi_file = open("%s/triplegrid_%d.csv" % (folder, throw))
+      seed_file = open("%s/seeds_triplegrid_%d.csv" % (folder, throw))
+      time_file = open("%s/times_triplegrid_%d.csv" % (folder, throw))
+      for pi_est, seed, runtime in zip(pi_file.readlines(), seed_file.readlines(), time_file.readlines()):
+        pi_est = float(pi_est)
+        writer.writerow([sampleId, int(seed), 'needles3', throw, pi_est, np.abs(np.pi - pi_est), float(runtime)])
+        sampleId += 1
+
+def _aggregate_throws():
+  aggregate_throws([10, 100, 1000, 10000], "results-python", "aggregate.txt")
 
 def _triple_plot_stats():
   # triple_plot_stats(6, 100, 100000)
-  triple_plot_stats(6, 5, 100000)
+  triple_plot_stats(2, 5, 100000)
 
 
 if __name__ == "__main__":
   # _pi_needle_triple()
   # _illustrate()
-  _triple_plot_stats()
-  # _throws_experiments()
+  # _triple_plot_stats()
+  _throws_experiments()
   # _compare_mathematica_python()
+  # _aggregate_throws()
 

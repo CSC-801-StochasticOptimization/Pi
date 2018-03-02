@@ -1,4 +1,4 @@
-	seedInit	solverName	signifDigits	piHat	OFtol	error	isCensored	cntProbe	runtime
+sampleId	seedInit	solverName	signifDigits	piHat	OFtol	error	isCensored	cntProbe	runtime
 1	729013742	Needles_3	1	3.1	0.05	-4.2e-02	False	1	0.0005
 2	254973556	Needles_3	1	3.1	0.05	-4.2e-02	False	1	0.0005
 3	337032055	Needles_3	1	3.1	0.05	-4.2e-02	False	1	0.0004
