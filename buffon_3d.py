@@ -316,21 +316,31 @@ def compare_mathematica_python(x_axis, fig_name):
     mathematica_std.append(np.std(mathematica_results))
     python_means.append(np.mean(python_results))
     python_std.append(np.std(python_results))
+  python_error_means = abs(np.subtract([np.pi] * len(python_means), python_means))
+  mathematica_error_means = abs(np.subtract([np.pi] * len(mathematica_means),  mathematica_means))
   # plt.errorbar(x_axis, mathematica_means, mathematica_std, fmt='bo-', ecolor='red')
   # plt.errorbar(x_axis, python_means, python_std, fmt='g+-', ecolor='yellow')
-  plt.plot(x_axis, mathematica_means, 'bo-', label="Mathematica")
-  plt.plot(x_axis, python_means, 'g+-', label="Python")
+  plt.plot(x_axis, mathematica_error_means, 'bo-', label="Mathematica")
+  plt.plot(x_axis, python_error_means, 'g+-', label="Python")
+  print("# Mathematica")
+  print(mathematica_error_means)
+  print("# Python")
+  print(python_error_means)
+  # plt.plot(x_axis, mathematica_means, 'bo-', label="Mathematica")
+  # plt.plot(x_axis, python_means, 'g+-', label="Python")
   plt.legend()
-  plt.ylabel("Estimate of Pi")
+  # plt.ylabel("Estimate of Pi")
+  plt.ylabel("Error of Pi")
   plt.xlabel("Number of throws")
   plt.xscale("log")
+  plt.yscale("log")
   plt.title("Comparing Mathematica and Python")
   plt.savefig(fig_name)
   plt.clf()
 
 
 def _compare_mathematica_python():
-  compare_mathematica_python([100, 1000, 10000], "fg_asym_pi_triplegrid_mathematica_vs_python.png")
+  compare_mathematica_python([10, 100, 1000, 10000], "fg_asym_pi_triplegrid_mathematica_vs_python.png")
 
 
 def _throws_experiments():
