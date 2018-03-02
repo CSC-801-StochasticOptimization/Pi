@@ -13,6 +13,9 @@ from shapely.geometry import Polygon, LineString, Point
 import time
 import pandas as pd
 import csv
+from joblib import Parallel, delayed
+import multiprocessing
+
 
 
 class Buffon(object):
@@ -252,6 +255,10 @@ def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=No
     f.write(html_data)
 
 
+def parallel_throw(*arg, **kwarg):
+  return Buffon.throw(*arg, **kwarg)
+
+
 def pi_throws(r, l, throws):
   """
   Estimate Pi for certain number of throws
@@ -265,9 +272,14 @@ def pi_throws(r, l, throws):
   cuts = {
     0: 0, 1: 0, 2: 0, 3: 0
   }
-  for _ in xrange(throws):
-    n_cuts = experiment.throw()
-    cuts[n_cuts] += 1
+  num_cores = multiprocessing.cpu_count()
+  print("# Num Cores: %d" % num_cores)
+  results = Parallel(n_jobs=num_cores)(delayed(parallel_throw)(experiment) for _ in range(throws))
+  for cut in results:
+    cuts[cut] += 1
+  # for _ in xrange(throws):
+  #   n_cuts = experiment.throw()
+  #   cuts[n_cuts] += 1
   pi_estimate = experiment.estimate(cuts)
   return pi_estimate
 
@@ -375,7 +387,7 @@ def aggregate_throws(throws, folder, write_file):
         sampleId += 1
 
 def _aggregate_throws():
-  aggregate_throws([10, 100, 1000, 10000], "results-python", "aggregate.txt")
+  aggregate_throws([10, 100, 1000, 10000], "results-python", "results-python/aggregate.txt")
 
 def _triple_plot_stats():
   # triple_plot_stats(6, 100, 100000)
