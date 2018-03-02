@@ -113,9 +113,9 @@ class Buffon(object):
 
 
 def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None):
-  #if seed is None:
-    #seed = np.random.randint(0, 2 ** 32)    #maxint limits with python3
-  seed = round(1e9*np.random.uniform(0,1))
+  if seed is None:
+    # seed = np.random.randint(0, 2 ** 32)    #maxint limits with python3
+    seed = int(round(1e9*np.random.uniform(0,1)))
   solver = "Needles_3"              #solver name to include in the results
   np.random.seed(seed)
   tolerance = 5 / (10 ** (signif_digits + 1))
@@ -173,8 +173,15 @@ def _pi_needle_triple():
   results.index.name = 'sampleId'
   results.columns.name = results.index.name
   results.index.name = None
+  results.to_csv("results.txt", sep="\t")
   print(results)
   results.to_html('results.html')
+  with open('results.html') as f:
+    html_data = f.read()
+    html_data += "\n"
+  with open('results.html', "wb") as f:
+    f.write(html_data)
+
 
 
 def plot_errorbar(x, y, e, fig_name, title, y_label):
@@ -234,15 +241,114 @@ def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=No
   plot_errorbar(x_axis, all_errors_means, all_errors_std, "exp/errors.png", "Errors vs # Significant digits", "Error")
   plot_line(x_axis, np.log(all_trials_means), "exp/trials_log.png", "log - # Trials vs # Significant digits", "log - #Trials")
   plot_line(x_axis, np.log(all_errors_means), "exp/errors_log.png", "log - Error vs # Significant digits", "log - Error")
+  results.to_csv("exp/results.txt", sep="\t")
   results.to_html('exp/results.html')
+  with open('exp/results.html') as f:
+    html_data = f.read()
+    html_data += "\n"
+  with open('exp/results.html', "wb") as f:
+    f.write(html_data)
+
+
+def pi_throws(r, l, throws):
+  """
+  Estimate Pi for certain number of throws
+  :param r: Ratio of length to distance
+  :param l: Length of needle
+  :param throws: Number of throws
+  :return: Estimate of Pi
+  """
+  experiment = Buffon(r, l)
+  experiment.initialize()
+  cuts = {
+    0: 0, 1: 0, 2: 0, 3: 0
+  }
+  for _ in xrange(throws):
+    n_cuts = experiment.throw()
+    cuts[n_cuts] += 1
+  pi_estimate = experiment.estimate(cuts)
+  return pi_estimate
+
+
+
+def throws_experiment(r, l, throws, repeats, seed=None, save_file=None):
+  """
+  Perform the thorws experiment where a needle is thrown a certain number of times.
+  :param r: Ratio of length to distance
+  :param l: Length of needle
+  :param throws: Number of throws
+  :param repeats: Number of repeats
+  :param seed: Seed for experiment
+  :param save_file: Save file. If None prints to console
+  :return:
+  """
+  if seed is None:
+    seed = np.random.randint(0, 2 ** 32)
+  print("# SEED: %d" % seed)
+  np.random.seed(seed)
+  ret_vals = []
+  for _ in range(repeats):
+    np.random.seed()
+    ret_vals.append(pi_throws(r, l, throws))
+  if save_file is not None:
+    with open(save_file, "wb") as f:
+      f.write("\n".join(map(str, ret_vals)))
+  return ret_vals
+
+
+def read_throw_results(file_name):
+  results = []
+  with open(file_name) as f:
+    for line in f.readlines():
+      results.append(float(line))
+  return results
+
+
+def compare_mathematica_python(x_axis, fig_name):
+  mathematica_means, mathematica_std = [], []
+  python_means, python_std = [], []
+  for x in x_axis:
+    mathematica_file = "results-mathematica/triplegrid_%d.csv" % x
+    mathematica_results = read_throw_results(mathematica_file)
+    python_file = "results-python/triplegrid_%d.csv" % x
+    python_results = read_throw_results(python_file)
+    mathematica_means.append(np.mean(mathematica_results))
+    mathematica_std.append(np.std(mathematica_results))
+    python_means.append(np.mean(python_results))
+    python_std.append(np.std(python_results))
+  # plt.errorbar(x_axis, mathematica_means, mathematica_std, fmt='bo-', ecolor='red')
+  # plt.errorbar(x_axis, python_means, python_std, fmt='g+-', ecolor='yellow')
+  plt.plot(x_axis, mathematica_means, 'bo-', label="Mathematica")
+  plt.plot(x_axis, python_means, 'g+-', label="Python")
+  plt.legend()
+  plt.ylabel("Estimate of Pi")
+  plt.xlabel("Number of throws")
+  plt.xscale("log")
+  plt.title("Comparing Mathematica and Python")
+  plt.savefig(fig_name)
+  plt.clf()
+
+
+def _compare_mathematica_python():
+  compare_mathematica_python([100, 1000, 10000], "fg_asym_pi_triplegrid_mathematica_vs_python.png")
+
+
+def _throws_experiments():
+  for throw in [10, 100, 1000, 10000]:
+    print("# Throw: %d" % throw)
+    seed = np.random.randint(0, 2 ** 32)
+    throws_experiment(1.0, 1.0, throw, 100, seed=seed, save_file="results-python/py_triplegrid_%d.csv" % throw)
 
 
 def _triple_plot_stats():
-  triple_plot_stats(6, 100, 100000)
+  # triple_plot_stats(6, 100, 100000)
+  triple_plot_stats(6, 5, 100000)
 
 
 if __name__ == "__main__":
   # _pi_needle_triple()
   # _illustrate()
   _triple_plot_stats()
+  # _throws_experiments()
+  # _compare_mathematica_python()
 
