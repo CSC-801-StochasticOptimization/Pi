@@ -373,6 +373,7 @@ def _throws_experiments(seed_init=None):
 
 
 def aggregate_throws(throws, folder, write_file):
+  print("## Python")
   with open(write_file, "wb") as csv_file:
     writer = csv.writer(csv_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
     writer.writerow(['sampleId', 'seedInit', 'solverName', 'numThrows', 'piHat', 'error', 'runtime'])
@@ -381,24 +382,49 @@ def aggregate_throws(throws, folder, write_file):
       pi_file = open("%s/triplegrid_%d.csv" % (folder, throw))
       seed_file = open("%s/seeds_triplegrid_%d.csv" % (folder, throw))
       time_file = open("%s/times_triplegrid_%d.csv" % (folder, throw))
+      estimates = []
       for pi_est, seed, runtime in zip(pi_file.readlines(), seed_file.readlines(), time_file.readlines()):
         pi_est = float(pi_est)
         writer.writerow([sampleId, int(seed), 'needles3', throw, pi_est, np.abs(np.pi - pi_est), float(runtime)])
         sampleId += 1
+        estimates.append(pi_est)
+      print(throw, abs(np.pi - np.mean(estimates)))
+
+
+def aggregate_mathematica(throws, folder, write_file):
+  print("## Mathematica")
+  with open(write_file, "wb") as csv_file:
+    writer = csv.writer(csv_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+    writer.writerow(['sampleId', 'numThrows', 'piHat', 'error'])
+    sampleId = 1
+    for throw in throws:
+      pi_file = open("%s/triplegrid_%d.csv" % (folder, throw))
+      estimates = []
+      for pi_est in pi_file.readlines():
+        pi_est = float(pi_est)
+        writer.writerow([sampleId, throw, pi_est, np.abs(np.pi - pi_est)])
+        sampleId += 1
+        estimates.append(pi_est)
+      print(throw, abs(np.pi - np.mean(estimates)))
+
 
 def _aggregate_throws():
-  aggregate_throws([10, 100, 1000, 10000], "results-python", "results-python/aggregate.txt")
+  aggregate_throws([10, 100, 1000, 10000, 100000, 1000000], "results-python", "results-python/aggregate.txt")
+  aggregate_mathematica([10, 100, 1000, 10000], "results-mathematica", "results-mathematica/aggregate.txt")
 
 def _triple_plot_stats():
   # triple_plot_stats(6, 100, 100000)
   triple_plot_stats(2, 5, 100000)
 
 
+
+
+
 if __name__ == "__main__":
   # _pi_needle_triple()
   # _illustrate()
   # _triple_plot_stats()
-  _throws_experiments()
-  # _compare_mathematica_python()
-  # _aggregate_throws()
+  # _throws_experiments()
+  # _compare_mathe matica_python()
+  _aggregate_throws()
 
