@@ -2,3 +2,4 @@ numpy
 shapely[vectorized]
 matplotlib
 pandas
+joblib
