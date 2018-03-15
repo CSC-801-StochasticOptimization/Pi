@@ -17,7 +17,6 @@ from joblib import Parallel, delayed
 import multiprocessing
 
 
-
 class Buffon(object):
   def __init__(self, r=1.0, l=1):
     self.r = r
@@ -360,18 +359,6 @@ def _compare_mathematica_python():
   compare_mathematica_python([10, 100, 1000, 10000], "fg_asym_pi_triplegrid_mathematica_vs_python.png")
 
 
-def _throws_experiments(powers=6, seed_init=None):
-  if seed_init is None:
-    seed_init = np.random.randint(0, 2**16)
-  np.random.seed(seed_init)
-  print("# Seed Init = %d" % seed_init)
-  folder = "results-python/"
-  throws = [10 ** i for i in range(1, powers + 1)]
-  for throw in throws:
-    print("# Throw: %d" % throw)
-    throws_experiment(1.0, 1.0, throw, 100, folder=folder, save_file="triplegrid_%d.csv" % throw)
-  aggregate_throws(throws, folder, '%sfg_asym_pi_plain_needles3_%dR_%d.txt' % (folder, powers, seed_init))
-
 
 def aggregate_throws(throws, folder, write_file):
   print("## Python")
@@ -417,12 +404,10 @@ def _triple_plot_stats():
   # triple_plot_stats(6, 100, 100000)
   triple_plot_stats(2, 5, 100000)
 
-
-if __name__ == "__main__":
-  # _pi_needle_triple()
-  # _illustrate()
-  # _triple_plot_stats()
-  _throws_experiments(powers=6, seed_init=None)
-  # _compare_mathe matica_python()
-  # _aggregate_throws()
+# if __name__ == "__main__":
+#   # _pi_needle_triple()
+#   # _illustrate()
+#   # _triple_plot_stats()
+#   # _compare_mathe matica_python()
+#   _throws_experiments()
 

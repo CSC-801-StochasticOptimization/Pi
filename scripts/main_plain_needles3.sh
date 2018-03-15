@@ -5,4 +5,4 @@
 #SBATCH -p opteron
 # Use modules to set the software environment
 
-python buffon_3d.py
+python main_plain_needles3.py -p 6
