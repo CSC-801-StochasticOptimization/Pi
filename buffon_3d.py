@@ -418,14 +418,11 @@ def _triple_plot_stats():
   triple_plot_stats(2, 5, 100000)
 
 
-
-
-
 if __name__ == "__main__":
   # _pi_needle_triple()
   # _illustrate()
   # _triple_plot_stats()
-  _throws_experiments(6)
+  _throws_experiments(powers=6, seed_init=None)
   # _compare_mathe matica_python()
   # _aggregate_throws()
 
