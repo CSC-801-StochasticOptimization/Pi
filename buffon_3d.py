@@ -273,7 +273,6 @@ def pi_throws(r, l, throws):
     0: 0, 1: 0, 2: 0, 3: 0
   }
   num_cores = multiprocessing.cpu_count()
-  print("# Num Cores: %d" % num_cores)
   results = Parallel(n_jobs=num_cores)(delayed(parallel_throw)(experiment) for _ in range(throws))
   for cut in results:
     cuts[cut] += 1
@@ -361,15 +360,17 @@ def _compare_mathematica_python():
   compare_mathematica_python([10, 100, 1000, 10000], "fg_asym_pi_triplegrid_mathematica_vs_python.png")
 
 
-def _throws_experiments(seed_init=None):
+def _throws_experiments(powers=6, seed_init=None):
   if seed_init is None:
     seed_init = np.random.randint(0, 2**16)
-    np.random.seed(seed_init)
+  np.random.seed(seed_init)
   print("# Seed Init = %d" % seed_init)
   folder = "results-python/"
-  for throw in [10000]:
+  throws = [10 ** i for i in range(1, powers + 1)]
+  for throw in throws:
     print("# Throw: %d" % throw)
     throws_experiment(1.0, 1.0, throw, 100, folder=folder, save_file="triplegrid_%d.csv" % throw)
+  aggregate_throws(throws, folder, '%sfg_asym_pi_plain_needles3_%dR_%d.txt' % (folder, powers, seed_init))
 
 
 def aggregate_throws(throws, folder, write_file):
@@ -424,7 +425,7 @@ if __name__ == "__main__":
   # _pi_needle_triple()
   # _illustrate()
   # _triple_plot_stats()
-  # _throws_experiments()
+  _throws_experiments(6)
   # _compare_mathe matica_python()
-  _aggregate_throws()
+  # _aggregate_throws()
 
