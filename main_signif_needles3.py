@@ -53,7 +53,7 @@ def main():
     seeds = np.random.randint(0, 2 ** 16, samples)
     signif_results = Parallel(n_jobs=num_cores)(delayed(
       buffon_3d.pi_needle_triple)(1, 1, cnt_probe_limit=CNT_PROBE_LIMITS[signif_digit],
-                                  signif_digits=signif_digit, seed=seed) for seed in seeds)
+                                  signif_digits=signif_digit, seed=seed, reject_censored=True) for seed in seeds)
     for i in range(len(signif_results)):
       results.loc[i + counter] = signif_results[i]
     counter += len(signif_results)

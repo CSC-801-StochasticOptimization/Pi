@@ -115,7 +115,7 @@ class Buffon(object):
     return self.alpha / ((cuts[1] + cuts[2] + cuts[3]) / n_throws + 0.5)
 
 
-def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None):
+def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None, reject_censored=False):
   if seed is None:
     # seed = np.random.randint(0, 2 ** 16)    #maxint limits with python3
     seed = int(round(1e9*np.random.uniform(0,1)))
@@ -144,8 +144,8 @@ def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None):
   end = time.time()
   # pi_estimate = round(pi_estimate, signif_digits)
   error = abs(pi_estimate - np.pi)
-  if is_censored:
-    pi_needle_triple(r, l, 100 * cnt_probe_limit, signif_digits, seed)
+  if reject_censored and is_censored:
+    return pi_needle_triple(r, l, 100 * cnt_probe_limit, signif_digits, seed, reject_censored)
   else:
     return [
       seed,
