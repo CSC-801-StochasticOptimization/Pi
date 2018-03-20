@@ -118,7 +118,7 @@ class Buffon(object):
 def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None, reject_censored=False):
   if seed is None:
     # seed = np.random.randint(0, 2 ** 16)    #maxint limits with python3
-    seed = int(round(1e9*np.random.uniform(0,1)))
+    seed = np.random.randint(0, 2 ** 16)
   solver = "Needles_3"              #solver name to include in the results
   np.random.seed(seed)
   tolerance = 5 / (10 ** (signif_digits + 1))
@@ -145,7 +145,8 @@ def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None, r
   # pi_estimate = round(pi_estimate, signif_digits)
   error = abs(pi_estimate - np.pi)
   if reject_censored and is_censored:
-    return pi_needle_triple(r, l, 100 * cnt_probe_limit, signif_digits, seed, reject_censored)
+    new_seed = np.random.randint(0, 2 ** 16)
+    return pi_needle_triple(r, l, cnt_probe_limit, signif_digits, new_seed, reject_censored)
   else:
     return [
       seed,
