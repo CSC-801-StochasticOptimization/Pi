@@ -144,18 +144,21 @@ def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None):
   end = time.time()
   # pi_estimate = round(pi_estimate, signif_digits)
   error = abs(pi_estimate - np.pi)
-  return [
-    seed,
-    solver,
-    signif_digits,
-    pi_estimate,
-    tolerance,
-    error,
-    is_censored,
-    #"cnt_probe_limit": cnt_probe_limit,
-    cnt_probe,
-    round(end - start, 4)
-  ]
+  if is_censored:
+    pi_needle_triple(r, l, 100 * cnt_probe_limit, signif_digits, seed)
+  else:
+    return [
+      seed,
+      solver,
+      signif_digits,
+      pi_estimate,
+      tolerance,
+      error,
+      is_censored,
+      #"cnt_probe_limit": cnt_probe_limit,
+      cnt_probe,
+      round(end - start, 4)
+    ]
 
 
 def _illustrate():
