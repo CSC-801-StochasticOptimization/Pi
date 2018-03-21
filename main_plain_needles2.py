@@ -33,7 +33,7 @@ def main():
   for throw in throws:
     print("# Throw: %d" % throw)
     lib.throws_experiment(1.0, 1.0, lib.pi_throws_2d, throw, 100, folder=folder, save_file="triplegrid_%d.csv" % throw)
-  lib.aggregate_throws(throws, folder, '%sfg_asym_pi_plain_needles3_%d_%d.txt' % (folder, powers, seed_init))
+  lib.aggregate_throws(throws, folder, '%sfg_asym_pi_plain_needles2_%d_%d.txt' % (folder, powers, seed_init))
 
 
 if __name__ == "__main__":
