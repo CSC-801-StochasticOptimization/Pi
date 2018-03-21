@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name b3dSignif
+#SBATCH --job-name b2dPlain
 #SBATCH -N 1
 #SBATCH -p opteron
 # Use modules to set the software environment
 
-python main_signif_needles3.py -d 6 -p 100
+python main_plain_needles2.py -p 6

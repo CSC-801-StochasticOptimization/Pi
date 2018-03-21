@@ -46,7 +46,7 @@ def main():
   print("# Max Signif Digit = %d" % max_signif_digits)
   print("# Samples = %d" % samples)
   print("# Cores = %d" % num_cores)
-  print("# Solver = Needles3")
+  print("# Solver = Needles2")
   results = pd.DataFrame(columns=["seedInit", "solverName", "signifDigits", "piHat", "OFtol", "error", "isCensored",
                                   "cntProbe", "runtime"])
   counter = 1
@@ -54,15 +54,15 @@ def main():
     print("### For %d significant digits" % signif_digit)
     seeds = np.random.randint(0, 2 ** 16, samples)
     signif_results = Parallel(n_jobs=num_cores)(delayed(
-      lib.pi_needle_triple)(1, 1, cnt_probe_limit=CNT_PROBE_LIMITS[signif_digit],
+      lib.pi_needle_double)(1, 1, cnt_probe_limit=CNT_PROBE_LIMITS[signif_digit],
                                   signif_digits=signif_digit, seed=seed, reject_censored=True) for seed in seeds)
     for i in range(len(signif_results)):
       results.loc[i + counter] = signif_results[i]
     counter += len(signif_results)
   results.index.name = 'sampleId'
   results.columns.name = results.index.name
-  txt_file_name = 'results-python/fg_asym_pi_signif_needles3_%d_%d.txt' % (max_signif_digits, seed_init)
-  html_file_name = 'results-python/fg_asym_pi_signif_needles3_%d_%d.html' % (max_signif_digits, seed_init)
+  txt_file_name = 'results-python/fg_asym_pi_signif_needles2_%d_%d.txt' % (max_signif_digits, seed_init)
+  html_file_name = 'results-python/fg_asym_pi_signif_needles2_%d_%d.html' % (max_signif_digits, seed_init)
   results.to_csv(txt_file_name, sep="\t")
   results.to_html(html_file_name)
   with open(html_file_name) as f:

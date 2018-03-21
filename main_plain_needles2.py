@@ -27,12 +27,12 @@ def main():
   np.random.seed(seed_init)
   print("# Seed Init = %d" % seed_init)
   print("# Max Throws = %d" % 10 ** powers)
-  folder = "results-python/needles3/"
+  folder = "results-python/needles2/"
   lib.delete(folder)
   throws = [10 ** i for i in range(1, powers + 1)]
   for throw in throws:
     print("# Throw: %d" % throw)
-    lib.throws_experiment(1.0, 1.0, lib.pi_throws_3d, throw, 100, folder=folder, save_file="triplegrid_%d.csv" % throw)
+    lib.throws_experiment(1.0, 1.0, lib.pi_throws_2d, throw, 100, folder=folder, save_file="triplegrid_%d.csv" % throw)
   lib.aggregate_throws(throws, folder, '%sfg_asym_pi_plain_needles3_%d_%d.txt' % (folder, powers, seed_init))
 
 
