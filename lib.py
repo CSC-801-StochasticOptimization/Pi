@@ -1,6 +1,7 @@
 from __future__ import print_function, division
 import sys
 import os
+
 sys.path.append(os.path.abspath("."))
 sys.dont_write_bytecode = True
 
@@ -16,6 +17,7 @@ import csv
 from joblib import Parallel, delayed
 import multiprocessing
 import shutil
+import collections
 
 
 def file_exists(file_name):
@@ -131,7 +133,14 @@ class Buffon(object):
     line = self.generate()
     return self.get_intersections(line)
 
-  def estimate(self, cuts):
+  def valid_throw(self):
+    line = self.generate()
+    for border in self.lines:
+      if line.intersects(border):
+        return 1
+    return 0
+
+  def estimate(self, cuts, n=0):
     raise NotImplementedError("Has to be implemented by subclass")
 
 
@@ -158,9 +167,48 @@ class Buffon3D(Buffon):
     self.x_limits = (-d2_3, d2_3)
     self.y_limits = (-d, d)
 
-  def estimate(self, cuts):
-    n_throws = sum(cuts.values())
-    return self.alpha / ((cuts[1] + cuts[2] + cuts[3]) / n_throws + 0.5)
+  def estimate(self, cuts, n=0):
+    p_0 = 0 if n == 0 else cuts[0] / n
+    return 2 * self.alpha / (3 - 2 * p_0)
+
+
+# class Buffon3D(Buffon):
+#   def __init__(self, r=1.0, l=1):
+#     Buffon.__init__(self, r, l)
+#     self.alpha = 1.5 * self.r * (4 - np.sqrt(3) * self.r / 2)
+#
+#   def initialize(self):
+#     d = self.d
+#     d_3 = d / np.sqrt(3)
+#     d2_3 = 2 * d_3
+#     A = (0, 0)
+#     B = (0, d2_3)
+#     C = (d_3, d)
+#     self.points = [A, B, C]
+#     self.x_limits = (0, d2_3)
+#     self.y_limits = (0, d)
+#     self.polygon = Polygon(self.points)
+#
+#   def get_intersections(self, line):
+#     return int(self.polygon.intersects(line))
+#
+#   def estimate(self, cuts, n=0):
+#     r = self.l / self.d
+#     # return 3 * r * (8 - np.sqrt(3) * r) / (2 * (3 - 2 * cuts[0] / n))
+#     return 2 * self.alpha / (3 - 2 * cuts[0] / n)
+#
+#   def simulate(self, n):
+#     self.initialize()
+#     cuts = {
+#         0: 0, 1: 0
+#     }
+#     for _ in range(n):
+#       line = self.generate()
+#       line_cuts = self.get_intersections(line)
+#       cuts[line_cuts] += 1
+#     pi_estimate = self.estimate(cuts, n)
+#     print(cuts)
+#     print(pi_estimate)
 
 
 class Buffon2D(Buffon):
@@ -183,7 +231,7 @@ class Buffon2D(Buffon):
     self.x_limits = (-d1_5, d1_5)
     self.y_limits = (-d, d)
 
-  def estimate(self, cuts):
+  def estimate(self, cuts, n=0):
     n_throws = sum(cuts.values())
     n_1 = cuts.get(1, 0)
     n_2 = cuts.get(2, 0)
@@ -416,7 +464,7 @@ def pi_throws_3d(r, l, throws):
   results = Parallel(n_jobs=num_cores)(delayed(parallel_3d_throw)(experiment) for _ in range(throws))
   for cut in results:
     cuts[cut] += 1
-  pi_estimate = experiment.estimate(cuts)
+  pi_estimate = experiment.estimate(cuts, throws)
   return pi_estimate
 
 
@@ -437,7 +485,7 @@ def pi_throws_2d(r, l, throws):
   results = Parallel(n_jobs=num_cores)(delayed(parallel_2d_throw)(experiment) for _ in range(throws))
   for cut in results:
     cuts[cut] += 1
-  pi_estimate = experiment.estimate(cuts)
+  pi_estimate = experiment.estimate(cuts, throws)
   return pi_estimate
 
 
@@ -570,3 +618,46 @@ def _triple_plot_stats():
 #   # _triple_plot_stats()
 #   # _compare_mathematica_python()
 #   _throws_experiments()
+
+
+def validate_sd():
+  csv_file = "results-python/needles3/fg_asym_pi_plain_needles3_4_56296.txt"
+  with open(csv_file) as f:
+    reader = csv.DictReader(f, delimiter='\t')
+    throws = collections.defaultdict(list)
+    for row in reader:
+      throw = int(row['numThrows'])
+      pi_hat = float(row['piHat'])
+      throws[throw].append(pi_hat)
+    std_devs = []
+    std_dev_theoritical = []
+    for throw in sorted(throws.keys()):
+      std_devs.append(np.std(throws[throw]))
+      # std_dev_theoritical.append(np.sqrt(0.01578/throw))
+      std_dev_theoritical.append(np.sqrt(0.01578 / throw))
+  print(std_devs)
+  print(std_dev_theoritical)
+
+def plot_sd(file_name, fig_name="temp.png"):
+  with open(file_name) as f:
+    reader = csv.DictReader(f, delimiter='\t')
+    throws = collections.defaultdict(list)
+    for row in reader:
+      throw = int(row['numThrows'])
+      pi_hat = float(row['piHat'])
+      throws[throw].append(pi_hat)
+    std_devs = []
+    std_dev_theoritical = []
+    x_axis = []
+    for throw in sorted(throws.keys()):
+      std_devs.append(np.std(throws[throw]))
+      std_dev_theoritical.append(np.sqrt(0.01578 / throw))
+      x_axis.append(throw)
+  plt.plot(x_axis, std_devs, color='r', linestyle='-', marker='+', label="Experimental")
+  plt.plot(x_axis, std_dev_theoritical, color='g', linestyle='--', marker='o', label="Theoretical")
+  plt.savefig(fig_name)
+  plt.clf()
+
+# plot_sd("results-python/needles3/fg_asym_pi_plain_needles3_4_56296.txt")
+
+# validate_sd()
