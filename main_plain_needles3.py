@@ -46,6 +46,7 @@ def main_single():
   n_threads = args.numThreads
   if seed_init is None:
     seed_init = np.random.randint(0, 2 ** 16)
+  np.random.seed(seed_init)
   throw = 10 ** powers
   print("# Seed Init = %d" % seed_init)
   folder = "results-python/needles3/"
