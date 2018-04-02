@@ -447,12 +447,13 @@ def parallel_2d_throw(*arg, **kwarg):
   return Buffon2D.throw(*arg, **kwarg)
 
 
-def pi_throws_3d(r, l, throws):
+def pi_throws_3d(r, l, throws, num_threads):
   """
   Estimate Pi for certain number of throws for Buffon3D
   :param r: Ratio of length to distance
   :param l: Length of needle
   :param throws: Number of throws
+  :param num_threads: Number of threads
   :return: Estimate of Pi
   """
   experiment = Buffon3D(r, l)
@@ -460,20 +461,20 @@ def pi_throws_3d(r, l, throws):
   cuts = {
       0: 0, 1: 0, 2: 0, 3: 0
   }
-  num_cores = multiprocessing.cpu_count()
-  results = Parallel(n_jobs=num_cores)(delayed(parallel_3d_throw)(experiment) for _ in range(throws))
+  results = Parallel(n_jobs=num_threads)(delayed(parallel_3d_throw)(experiment) for _ in range(throws))
   for cut in results:
     cuts[cut] += 1
   pi_estimate = experiment.estimate(cuts, throws)
   return pi_estimate
 
 
-def pi_throws_2d(r, l, throws):
+def pi_throws_2d(r, l, throws, num_threads):
   """
   Estimate Pi for certain number of throws for Buffon 2D
   :param r: Ratio of length to distance
   :param l: Length of needle
   :param throws: Number of throws
+  :param num_threads: Number of threads
   :return: Estimate of Pi
   """
   experiment = Buffon2D(r, l)
@@ -481,15 +482,15 @@ def pi_throws_2d(r, l, throws):
   cuts = {
       0: 0, 1: 0, 2: 0, 3: 0
   }
-  num_cores = multiprocessing.cpu_count()
-  results = Parallel(n_jobs=num_cores)(delayed(parallel_2d_throw)(experiment) for _ in range(throws))
+  results = Parallel(n_jobs=num_threads)(delayed(parallel_2d_throw)(experiment) for _ in range(throws))
   for cut in results:
     cuts[cut] += 1
   pi_estimate = experiment.estimate(cuts, throws)
   return pi_estimate
 
 
-def throws_experiment(r, l, exp_func, throws, repeats, folder="", save_file=None):
+def throws_experiment(r, l, exp_func, throws, repeats, folder="", save_file=None,
+                      num_threads=multiprocessing.cpu_count()):
   """
   Perform the thorws experiment where a needle is thrown a certain number of times.
   :param r: Ratio of length to distance
@@ -499,15 +500,17 @@ def throws_experiment(r, l, exp_func, throws, repeats, folder="", save_file=None
   :param repeats: Number of repeats
   :param folder: Folder to save the results
   :param save_file: Save file. If None prints to console
+  :param num_threads: Number of threads to run in parallel
   :return:
   """
   ret_vals, seeds, runtimes = [], [], []
+  print("Running on %d threads" % num_threads)
   for _ in range(repeats):
     seed = np.random.randint(0, 2 ** 16)
     np.random.seed(seed)
     seeds.append(seed)
     start = time.time()
-    ret_vals.append(exp_func(r, l, throws))
+    ret_vals.append(exp_func(r, l, throws, num_threads))
     runtimes.append(time.time() - start)
   mkdir(folder)
   if save_file is not None:
