@@ -518,11 +518,11 @@ def throws_experiment(r, l, exp_func, throws, repeats, folder="", save_file=None
     mode = "ab" if file_exists(pi_file) else "wb"
     with open(pi_file, mode) as f:
       f.write("\n".join(map(str, ret_vals)))
-    seeds_file = "%s%s" % (folder, save_file)
+    seeds_file = "%sseeds_%s" % (folder, save_file)
     mode = "ab" if file_exists(seeds_file) else "wb"
     with open(seeds_file, mode) as f:
       f.write("\n".join(map(str, seeds)))
-    times_file = "%s%s" % (folder, save_file)
+    times_file = "%stimes_%s" % (folder, save_file)
     mode = "ab" if file_exists(times_file) else "wb"
     with open(times_file, mode) as f:
       f.write("\n".join(map(str, runtimes)))
