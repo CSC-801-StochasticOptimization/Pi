@@ -33,7 +33,7 @@ def mkdir(directory):
   """
   Create Directory if it does not exist
   """
-  if not os.path.exists(directory):
+  if not file_exists(directory):
     try:
       os.makedirs(directory)
     except OSError, e:
@@ -514,11 +514,17 @@ def throws_experiment(r, l, exp_func, throws, repeats, folder="", save_file=None
     runtimes.append(time.time() - start)
   mkdir(folder)
   if save_file is not None:
-    with open("%s%s" % (folder, save_file), "wb") as f:
+    pi_file = "%s%s" % (folder, save_file)
+    mode = "ab" if file_exists(pi_file) else "wb"
+    with open(pi_file, mode) as f:
       f.write("\n".join(map(str, ret_vals)))
-    with open("%sseeds_%s" % (folder, save_file), "wb") as f:
+    seeds_file = "%s%s" % (folder, save_file)
+    mode = "ab" if file_exists(seeds_file) else "wb"
+    with open(seeds_file, mode) as f:
       f.write("\n".join(map(str, seeds)))
-    with open("%stimes_%s" % (folder, save_file), "wb") as f:
+    times_file = "%s%s" % (folder, save_file)
+    mode = "ab" if file_exists(times_file) else "wb"
+    with open(times_file, mode) as f:
       f.write("\n".join(map(str, runtimes)))
   return ret_vals
 
