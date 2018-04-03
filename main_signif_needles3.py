@@ -48,7 +48,7 @@ def main():
   print("# Cores = %d" % num_cores)
   print("# Solver = Needles3")
   results = pd.DataFrame(columns=["seedInit", "solverName", "signifDigits", "piHat", "OFtol", "error", "isCensored",
-                                  "cntProbe", "runtime"])
+                                  "numThrows", "runtime"])
   counter = 1
   for signif_digit in range(2, max_signif_digits + 1):
     print("### For %d significant digits" % signif_digit)

@@ -252,28 +252,30 @@ def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None, r
   solver = "Needles_3"              # solver name to include in the results
   np.random.seed(seed)
   tolerance = 5 / (10 ** (signif_digits + 1))
-  pi_lb = np.pi - tolerance
-  pi_ub = np.pi + tolerance
+  # pi_lb = np.pi - tolerance
+  # pi_ub = np.pi + tolerance
   cnt_probe = 0
   is_censored = True
   experiment = Buffon3D(r, l)
   experiment.initialize()
   cuts = {
-      0: 0, 1: 0, 2: 0, 3: 0
+      0: 0, 1: 0
   }
   pi_estimate = 0
+  error = 0
   start = time.time()
   while cnt_probe < cnt_probe_limit:
     cnt_probe += 1
-    n_cuts = experiment.throw()
+    n_cuts = experiment.valid_throw()
     cuts[n_cuts] += 1
-    pi_estimate = experiment.estimate(cuts)
-    if pi_lb <= pi_estimate <= pi_ub:
+    pi_estimate = experiment.estimate(cuts, cnt_probe)
+    error = np.abs(pi_estimate - np.pi)
+    if error < tolerance:
       is_censored = False
       break
   end = time.time()
   # pi_estimate = round(pi_estimate, signif_digits)
-  error = abs(pi_estimate - np.pi)
+  rounded_estimate = np.round(pi_estimate, signif_digits)
   if reject_censored and is_censored:
     new_seed = np.random.randint(0, 2 ** 16)
     return pi_needle_triple(r, l, cnt_probe_limit, signif_digits, new_seed, reject_censored)
@@ -282,7 +284,7 @@ def pi_needle_triple(r, l, cnt_probe_limit=100000, signif_digits=3, seed=None, r
         seed,
         solver,
         signif_digits,
-        pi_estimate,
+        rounded_estimate,  # pi_estimate,
         tolerance,
         error,
         is_censored,
