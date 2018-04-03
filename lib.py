@@ -71,6 +71,8 @@ class Buffon(object):
     raise NotImplementedError("Has to be implemented by subclass")
 
   def plot_frame(self):
+    x, y = self.polygon.exterior.xy
+    plt.plot(x, y, color="grey", alpha=0.7, linewidth=3, solid_capstyle='round', zorder=2)
     for line in self.lines:
       x, y = line.xy
       plt.plot(x, y, color="grey", alpha=0.7, linewidth=3, solid_capstyle='round', zorder=2)
@@ -85,18 +87,20 @@ class Buffon(object):
     plt.plot(x, y, color=color, alpha=0.7, linewidth=2, solid_capstyle='round', zorder=2)
 
   def generate(self):
-    point = None
-    while point is None or not point.intersects(self.polygon):
+    def gen0():
       x = np.random.uniform(low=self.x_limits[0], high=self.x_limits[1])
       y = np.random.uniform(low=self.y_limits[0], high=self.y_limits[1])
       point = Point(x, y)
-    angle = np.random.uniform(0, np.pi)
-    hyp = self.l / 2
-    dx = hyp * np.cos(angle)
-    dy = hyp * np.sin(angle)
-    A = (point.x - dx, point.y - dy)
-    B = (point.x + dx, point.y + dy)
-    line = LineString([A, B])
+      angle = np.random.uniform(0, np.pi)
+      hyp = self.l / 2
+      dx = hyp * np.cos(angle)
+      dy = hyp * np.sin(angle)
+      A = (point.x - dx, point.y - dy)
+      B = (point.x + dx, point.y + dy)
+      return LineString([A, B])
+    line = gen0()
+    while not self.polygon.contains(line) and not self.polygon.intersects(line):
+      line = gen0()
     return line
 
   def illustrate(self, n_lines=10, save_file="temp.png"):
@@ -135,8 +139,10 @@ class Buffon(object):
 
   def valid_throw(self):
     line = self.generate()
+    # if line.intersects(self.polygon):
+    #   return 1
     for border in self.lines:
-      if line.intersects(border):
+      if border.intersects(line):
         return 1
     return 0
 
@@ -440,7 +446,7 @@ def triple_plot_stats(max_signif_digits, repeats, cnt_probe_limit, start_seed=No
 
 
 def parallel_3d_throw(*arg, **kwarg):
-  return Buffon3D.throw(*arg, **kwarg)
+  return Buffon3D.valid_throw(*arg, **kwarg)
 
 
 def parallel_2d_throw(*arg, **kwarg):
@@ -468,25 +474,25 @@ def pi_throws_3d(r, l, throws, num_threads):
   return pi_estimate
 
 
-def pi_throws_2d(r, l, throws, num_threads):
-  """
-  Estimate Pi for certain number of throws for Buffon 2D
-  :param r: Ratio of length to distance
-  :param l: Length of needle
-  :param throws: Number of throws
-  :param num_threads: Number of threads
-  :return: Estimate of Pi
-  """
-  experiment = Buffon2D(r, l)
-  experiment.initialize()
-  cuts = {
-      0: 0, 1: 0, 2: 0, 3: 0
-  }
-  results = Parallel(n_jobs=num_threads)(delayed(parallel_2d_throw)(experiment) for _ in range(throws))
-  for cut in results:
-    cuts[cut] += 1
-  pi_estimate = experiment.estimate(cuts, throws)
-  return pi_estimate
+# def pi_throws_2d(r, l, throws, num_threads):
+#   """
+#   Estimate Pi for certain number of throws for Buffon 2D
+#   :param r: Ratio of length to distance
+#   :param l: Length of needle
+#   :param throws: Number of throws
+#   :param num_threads: Number of threads
+#   :return: Estimate of Pi
+#   """
+#   experiment = Buffon2D(r, l)
+#   experiment.initialize()
+#   cuts = {
+#       0: 0, 1: 0, 2: 0, 3: 0
+#   }
+#   results = Parallel(n_jobs=num_threads)(delayed(parallel_2d_throw)(experiment) for _ in range(throws))
+#   for cut in results:
+#     cuts[cut] += 1
+#   pi_estimate = experiment.estimate(cuts, throws)
+#   return pi_estimate
 
 
 def throws_experiment(r, l, exp_func, throws, repeats, folder="", save_file=None,
@@ -512,6 +518,9 @@ def throws_experiment(r, l, exp_func, throws, repeats, folder="", save_file=None
     start = time.time()
     ret_vals.append(exp_func(r, l, throws, num_threads))
     runtimes.append(time.time() - start)
+  seeds.append("")
+  runtimes.append("")
+  ret_vals.append("")
   mkdir(folder)
   if save_file is not None:
     pi_file = "%s%s" % (folder, save_file)
@@ -588,6 +597,7 @@ def aggregate_throws(throws, folder, write_file):
       time_file = open("%s/times_triplegrid_%d.csv" % (folder, throw))
       estimates = []
       for pi_est, seed, runtime in zip(pi_file.readlines(), seed_file.readlines(), time_file.readlines()):
+        if len(pi_est) == 0: continue
         pi_est = float(pi_est)
         writer.writerow([sampleId, int(seed), 'needles3', throw, pi_est, np.abs(np.pi - pi_est), float(runtime)])
         sampleId += 1
@@ -662,11 +672,22 @@ def plot_sd(file_name, fig_name="temp.png"):
       std_devs.append(np.std(throws[throw]))
       std_dev_theoritical.append(np.sqrt(0.01578 / throw))
       x_axis.append(throw)
+    print("\nExpmnt:", std_devs)
+    print("Theory:", std_dev_theoritical)
   plt.plot(x_axis, std_devs, color='r', linestyle='-', marker='+', label="Experimental")
   plt.plot(x_axis, std_dev_theoritical, color='g', linestyle='--', marker='o', label="Theoretical")
   plt.savefig(fig_name)
   plt.clf()
 
-# plot_sd("results-python/needles3/fg_asym_pi_plain_needles3_4_56296.txt")
+# plot_sd("results-python/fg_asym_pi_plain_needles3_1.txt")
+# plot_sd("results-python/fg_asym_pi_plain_needles3_3.txt")
+# plot_sd("results-python/fg_asym_pi_plain_needles3_3_1.txt")
+# plot_sd("results-python/fg_asym_pi_plain_needles3_3.txt")
+# plot_sd("results-python/fg_asym_pi_plain_needles3_4.txt")
+# plot_sd("results-python/fg_asym_pi_plain_needles3_5.txt")
+# plot_sd("results-python/fg_asym_pi_plain_needles3_7.txt")
+# plot_sd("results-python/needles3/fg_asym_pi_plain_needles3_3.txt")
+
+# _illustrate3d()
 
 # validate_sd()
